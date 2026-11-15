@@ -35,7 +35,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.rednote.lite.RedNoteApp
 import com.rednote.lite.data.sign.SignEngine
 
-private const val LOGIN_URL = "https://www.xiaohongshu.com/explore"
+private const val LOGIN_URL = "https://www.xiaohongshu.com/login"
 
 /**
  * 登录页：以桌面版 UA 加载小红书 PC 网页版，用户扫码或账号密码登录后，
@@ -88,8 +88,9 @@ fun LoginScreen(onClose: () -> Unit) {
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
                             settings.databaseEnabled = true
-                            // 桌面版 UA：未登录访问 /explore 时服务端会 302 到 /login，
-                            // 直接进入 PC 版登录页（扫码 / 手机号 / 账号密码都可用）
+                            // 桌面版 UA：直接进 PC 版登录页（扫码 / 手机号 / 账号密码都可用）。
+                            // 注意：不要用 /explore——实测未登录访问 /explore 不再 302 到
+                            // /login，页面直接显示 explore 内容，上面没有登录按钮。
                             settings.userAgentString = SignEngine.DESKTOP_USER_AGENT
                             // PC 站点自带窄屏断点，这里保证没有 viewport 的页面也能铺满并支持缩放
                             settings.useWideViewPort = true
@@ -100,6 +101,19 @@ fun LoginScreen(onClose: () -> Unit) {
                             CookieManager.getInstance().setAcceptCookie(true)
                             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                             webViewClient = object : WebViewClient() {
+                                override fun shouldOverrideUrlLoading(
+                                    view: WebView?,
+                                    request: WebResourceRequest?,
+                                ): Boolean {
+                                    val url = request?.url?.toString().orEmpty()
+                                    // 非 http(s) 链接（如页面里“打开看看 / App内打开”按钮的
+                                    // xhsdiscover://）WebView 加载不了会报
+                                    // ERR_UNKNOWN_URL_SCHEME；直接吞掉，不跳外部 App，
+                                    // 登录必须在这个 WebView 里完成。
+                                    return !url.startsWith("http://") &&
+                                        !url.startsWith("https://")
+                                }
+
                                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                                     loading.value = true
                                 }
