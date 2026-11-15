@@ -44,6 +44,8 @@ data class NoteCard(
     val desc: String? = null,
     val user: UserBrief? = null,
     @SerialName("interact_info") val interactInfo: InteractInfo? = null,
+    // 首页接口不一定返回标签，没有就是空列表；返回了就进筛选的匹配范围
+    @SerialName("tag_list") val tags: List<NoteTag> = emptyList(),
     val cover: Cover? = null,
     @SerialName("video") val video: VideoInfo? = null,
     // 有些列表接口把 xsec_token 放在 note_card 里而不是外层，取不到时用它兜底

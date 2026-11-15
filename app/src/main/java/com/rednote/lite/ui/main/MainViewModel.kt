@@ -39,6 +39,7 @@ data class FeedFilter(
      * 命中任意一条就隐藏。
      *
      * 关键词：多个之间是「或」，匹配上任一个就屏蔽。
+     * 匹配范围是标题、简介、作者昵称和标签（首页接口不一定返回标签，没有就只按前三项）。
      * 点赞：**缺失按 0 算**。有些卡片根本没有 interact_info，界面也是显示 0，
      * 这种必须能被屏蔽，否则「点赞为 0 的屏蔽不掉」。
      * 评论：首页接口不返回 comment_count，缺失时这条不参与判断，
@@ -50,7 +51,9 @@ data class FeedFilter(
         if (kws.isEmpty() && minLikes <= 0 && minComments <= 0) return false
         val card = item.noteCard
         val info = card?.interactInfo
-        val text = listOfNotNull(card?.displayTitle, card?.title, card?.desc).joinToString(" ")
+        val text = listOfNotNull(card?.displayTitle, card?.title, card?.desc, card?.user?.nickname)
+            .plus(card?.tags.orEmpty().map { it.name })
+            .joinToString(" ")
 
         val byKeyword = kws.any { text.contains(it, ignoreCase = true) }
         val byLikes = minLikes > 0 && parseCount(info?.likedCount) < minLikes
