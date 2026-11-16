@@ -417,7 +417,8 @@ private fun FilterDialog(
                     onValueChange = { keyword = it },
                     label = { Text("关键词（多个用 / 分隔，标题/简介/作者/标签命中即隐藏）") },
                     placeholder = { Text("例如：广告/代购/链接") },
-                    singleLine = true,
+                    singleLine = false,
+                    maxLines = 4,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(

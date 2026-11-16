@@ -203,7 +203,15 @@ class XhsApi(private val signEngine: SignEngine) {
 
     // ---------------- 业务接口 ----------------
 
-    /** 搜索笔记（无需签名，但需要登录 Cookie）。 */
+    /**
+     * 搜索笔记（需要登录 Cookie；同时带上签名）。
+     *
+     * 2026-11-02 探测时 search/notes 是唯一不校验签名的读接口，但 2026-11-16
+     * 用户实测搜索失败，而首页（带签名）正常——最可能的解释是网关后来把搜索
+     * 也纳入了 406 拦截。带签名发：如果该接口仍不校验签名，多余的头会被忽略，
+     * 无害；如果已开始校验，签名就是修复本身。签名失败时 requestRaw 会自动
+     * 退回无签名发送（见 XhsApi.requestRaw），不会比现在更差。
+     */
     suspend fun searchNotes(keyword: String, page: Int = 1, pageSize: Int = 20): FeedData? {
         val body = buildJsonObject {
             put("keyword", keyword)
@@ -220,7 +228,7 @@ class XhsApi(private val signEngine: SignEngine) {
             put("search_id", "")
             put("image_scene", "SR_1_1")
         }.toString()
-        return decodeData(requestRaw("/api/sns/web/v1/search/notes", "POST", body, signed = false))
+        return decodeData(requestRaw("/api/sns/web/v1/search/notes", "POST", body, signed = true))
     }
 
     /** 首页推荐信息流。 */
